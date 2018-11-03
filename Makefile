@@ -6,3 +6,6 @@ default: clox
 
 clox: $(OBJECTS)
 	gcc $^ -o $@
+
+clean:
+	rm *.o clox
