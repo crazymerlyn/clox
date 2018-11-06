@@ -4,8 +4,8 @@ OBJECTS := $(SOURCES:.c=.o)
 default: clox
 
 
-clox: $(OBJECTS)
-	gcc $^ -o $@
+clox: $(OBJECTS) $(SOURCES)
+	gcc $(OBJECTS) -o $@
 
 clean:
 	rm *.o clox
