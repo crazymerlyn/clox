@@ -54,6 +54,14 @@ static InterpretResult run(VM *vm) {
             push(vm, constant);
             break;
         }
+        case OP_CONSTANT_LONG: {
+            int index = *vm->ip++;
+            index = index * 256 + *vm->ip++;
+            index = index * 256 + *vm->ip++;
+            Value constant = vm->chunk->constants.values[index];
+            push(vm, constant);
+            break;
+        }
         case OP_ADD: BINARY_OP(+); break;
         case OP_SUBTRACT: BINARY_OP(-); break;
         case OP_MULTIPLY: BINARY_OP(*); break;
