@@ -165,10 +165,16 @@ static void binary(Parser *parser) {
     parse_precedence(parser, (Precedence)(rule->precedence + 1));
 
     switch(operator_type) {
-    case TOKEN_PLUS:    emit_byte(parser, OP_ADD); break;
-    case TOKEN_MINUS:   emit_byte(parser, OP_SUBTRACT); break;
-    case TOKEN_STAR:    emit_byte(parser, OP_MULTIPLY); break;
-    case TOKEN_SLASH:   emit_byte(parser, OP_DIVIDE); break;
+    case TOKEN_BANG_EQUAL:      emit_bytes(parser, OP_EQUAL, OP_NOT); break;
+    case TOKEN_EQUAL_EQUAL:     emit_byte(parser, OP_EQUAL); break;
+    case TOKEN_GREATER:         emit_byte(parser, OP_GREATER); break;
+    case TOKEN_GREATER_EQUAL:   emit_bytes(parser, OP_LESS, OP_NOT); break;
+    case TOKEN_LESS:            emit_byte(parser, OP_LESS); break;
+    case TOKEN_LESS_EQUAL:      emit_bytes(parser, OP_GREATER, OP_NOT); break;
+    case TOKEN_PLUS:            emit_byte(parser, OP_ADD); break;
+    case TOKEN_MINUS:           emit_byte(parser, OP_SUBTRACT); break;
+    case TOKEN_STAR:            emit_byte(parser, OP_MULTIPLY); break;
+    case TOKEN_SLASH:           emit_byte(parser, OP_DIVIDE); break;
     }
 }
 
@@ -195,13 +201,13 @@ ParseRule rules[] = {
   { NULL,     binary,  PREC_FACTOR },     // TOKEN_SLASH           
   { NULL,     binary,  PREC_FACTOR },     // TOKEN_STAR            
   { unary,    NULL,    PREC_NONE },       // TOKEN_BANG            
-  { NULL,     NULL,    PREC_EQUALITY },   // TOKEN_BANG_EQUAL      
+  { NULL,     binary,  PREC_EQUALITY },   // TOKEN_BANG_EQUAL      
   { NULL,     NULL,    PREC_NONE },       // TOKEN_EQUAL           
-  { NULL,     NULL,    PREC_EQUALITY },   // TOKEN_EQUAL_EQUAL     
-  { NULL,     NULL,    PREC_COMPARISON }, // TOKEN_GREATER         
-  { NULL,     NULL,    PREC_COMPARISON }, // TOKEN_GREATER_EQUAL   
-  { NULL,     NULL,    PREC_COMPARISON }, // TOKEN_LESS            
-  { NULL,     NULL,    PREC_COMPARISON }, // TOKEN_LESS_EQUAL      
+  { NULL,     binary,  PREC_EQUALITY },   // TOKEN_EQUAL_EQUAL     
+  { NULL,     binary,  PREC_COMPARISON }, // TOKEN_GREATER         
+  { NULL,     binary,  PREC_COMPARISON }, // TOKEN_GREATER_EQUAL   
+  { NULL,     binary,  PREC_COMPARISON }, // TOKEN_LESS            
+  { NULL,     binary,  PREC_COMPARISON }, // TOKEN_LESS_EQUAL      
   { NULL,     NULL,    PREC_NONE },       // TOKEN_IDENTIFIER      
   { NULL,     NULL,    PREC_NONE },       // TOKEN_STRING          
   { number,   NULL,    PREC_NONE },       // TOKEN_NUMBER          

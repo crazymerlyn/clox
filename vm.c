@@ -91,10 +91,18 @@ static InterpretResult run(VM *vm) {
         case OP_NIL: push(vm, NIL_VAL); break;
         case OP_TRUE: push(vm, BOOL_VAL(true)); break;
         case OP_FALSE: push(vm, BOOL_VAL(false)); break;
-        case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
-        case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
-        case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
-        case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
+        case OP_EQUAL: {
+            Value b = pop(vm);
+            Value a = pop(vm);
+            push(vm, BOOL_VAL(values_equal(a, b)));
+            break;
+        }
+        case OP_GREATER:    BINARY_OP(BOOL_VAL, >); break;
+        case OP_LESS:       BINARY_OP(BOOL_VAL, <); break;
+        case OP_ADD:        BINARY_OP(NUMBER_VAL, +); break;
+        case OP_SUBTRACT:   BINARY_OP(NUMBER_VAL, -); break;
+        case OP_MULTIPLY:   BINARY_OP(NUMBER_VAL, *); break;
+        case OP_DIVIDE:     BINARY_OP(NUMBER_VAL, /); break;
         case OP_NOT:
             push(vm, BOOL_VAL(is_falsey(pop(vm)))); break;
         case OP_NEGATE:
