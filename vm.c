@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 
 #include "common.h"
@@ -26,15 +27,35 @@ void init_vm(VM *vm) {
 void free_vm(VM *vm) {
 }
 
+static Value peek(VM *vm, int dist) {
+    return vm->stack_top[-1 - dist];
+}
+
+static void runtime_error(VM *vm, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fputs("\n", stderr);
+
+    size_t inst = vm->ip - vm->chunk->code;
+    fprintf(stderr, "[line %d] in script\n",
+            vm->chunk->lines[inst]);
+}
+
 static InterpretResult run(VM *vm) {
 #define READ_BYTE() (*vm->ip++)
 #define READ_CONSTANT() (vm->chunk->constants.values[READ_BYTE()])
 
-#define BINARY_OP(op) \
+#define BINARY_OP(value_type, op) \
     do { \
-        Value b = pop(vm); \
-        Value a = pop(vm); \
-        push(vm, a op b); \
+        if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
+            runtime_error(vm, "Operands must be numbers."); \
+            return INTERPRET_RUNTIME_ERROR; \
+        } \
+        double b = AS_NUMBER(pop(vm)); \
+        double a = AS_NUMBER(pop(vm)); \
+        push(vm, value_type(a op b)); \
     } while (false)
 
     for (;;) {
@@ -63,11 +84,16 @@ static InterpretResult run(VM *vm) {
             push(vm, constant);
             break;
         }
-        case OP_ADD: BINARY_OP(+); break;
-        case OP_SUBTRACT: BINARY_OP(-); break;
-        case OP_MULTIPLY: BINARY_OP(*); break;
-        case OP_DIVIDE: BINARY_OP(/); break;
-        case OP_NEGATE: push(vm, -pop(vm)); break;
+        case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
+        case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
+        case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
+        case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
+        case OP_NEGATE:
+            if (!IS_NUMBER(peek(vm, 0))) {
+                runtime_error(vm, "Operand must be a number.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            push(vm, NUMBER_VAL(-AS_NUMBER(pop(vm)))); break;
         case OP_RETURN:
             print_value(pop(vm));
             printf("\n");

@@ -75,7 +75,7 @@ static void emit_constant(Parser *parser, Value value) {
 
 static void number(Parser *parser) {
     double value = strtod(parser->previous.start, NULL);
-    emit_constant(parser, value);
+    emit_constant(parser, NUMBER_VAL(value));
 }
 
 static void error_at(Parser *parser, Token *token, const char *message) {
