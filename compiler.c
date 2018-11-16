@@ -13,6 +13,7 @@ typedef struct {
     Token previous;
     Scanner *scanner;
     Chunk *chunk;
+    VM *vm;
     bool had_error;
     bool panic_mode;
 } Parser;
@@ -190,7 +191,7 @@ static void literal(Parser *parser) {
 
 
 static void string(Parser *parser) {
-    emit_constant(parser, OBJ_VAL(copy_string(parser->previous.start + 1,
+    emit_constant(parser, OBJ_VAL(copy_string(parser->vm, parser->previous.start + 1,
                     parser->previous.length - 2)));
 }
 
@@ -241,12 +242,13 @@ ParseRule *get_rule(TokenType type) {
     return &rules[type];
 }
 
-bool compile(const char *source, Chunk *chunk) {
+bool compile(VM *vm, const char *source, Chunk *chunk) {
     Scanner scanner;
     init_scanner(&scanner, source);
     Parser parser = {0};
     parser.scanner = &scanner;
     parser.chunk = chunk;
+    parser.vm = vm;
     advance(&parser);
     expression(&parser);
     consume(&parser, TOKEN_EOF, "Expect end of expression.");

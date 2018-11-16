@@ -24,9 +24,11 @@ Value pop(VM *vm) {
 
 void init_vm(VM *vm) {
     reset_stack(vm);
+    vm->objects = NULL;
 }
 
 void free_vm(VM *vm) {
+    free_objects(vm->objects);
 }
 
 static Value peek(VM *vm, int dist) {
@@ -59,7 +61,7 @@ static void concatenate(VM *vm) {
     memcpy(chars + a->length, b->chars, b->length);
     chars[length] = '\0';
 
-    ObjString *result = take_string(chars, length);
+    ObjString *result = take_string(vm, chars, length);
     push(vm, OBJ_VAL(result));
 }
 
@@ -153,7 +155,7 @@ static InterpretResult run(VM *vm) {
 InterpretResult interpret(VM *vm, const char *source) {
     Chunk chunk;
     init_chunk(&chunk);
-    if (!compile(source, &chunk)) {
+    if (!compile(vm, source, &chunk)) {
         free_chunk(&chunk);
         return INTERPRET_COMPILE_ERROR;
     }
