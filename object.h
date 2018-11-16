@@ -24,6 +24,7 @@ struct sObjString {
     char *chars;
 };
 
+ObjString *take_string(char *chars, int length);
 ObjString *copy_string(const char *chars, int length);
 
 static inline bool is_obj_type(Value value, ObjType type) {
