@@ -76,10 +76,12 @@ bool table_set(Table *table, ObjString *key, Value value) {
     }
     Entry *entry = find_entry(table->entries, table->capacity, key);
     bool is_new_key = entry->key == NULL;
+
+    if (is_new_key && IS_NIL(entry->value)) table->count++;
+
     entry->key = key;
     entry->value = value;
 
-    if (is_new_key) table->count++;
     return is_new_key;
 }
 
