@@ -25,6 +25,7 @@ Value pop(VM *vm) {
 void init_vm(VM *vm) {
     reset_stack(vm);
     vm->objects = NULL;
+    init_table(&vm->strings);
 }
 
 void free_vm(VM *vm) {

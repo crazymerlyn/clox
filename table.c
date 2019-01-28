@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "memory.h"
 #include "table.h"
 
@@ -97,5 +99,22 @@ void table_add_all(Table *from, Table *to) {
     for (int i = 0; i < from->capacity; ++i) {
         if (from->entries[i].key == NULL) continue;
         table_set(to, from->entries[i].key, from->entries[i].value);
+    }
+}
+
+ObjString *table_find_string(Table *table, const char *chars, int length, uint32_t hash) {
+    if (table->entries == NULL) return NULL;
+
+    uint32_t index = hash % table->capacity;
+
+    for(;;) {
+        Entry *entry = &table->entries[index];
+
+        if (entry->key == NULL) return NULL;
+        if (entry->key->length == length &&
+                memcmp(entry->key->chars, chars, length) == 0) {
+            return entry->key;
+        }
+        index = (index + 1) % table->capacity;
     }
 }
