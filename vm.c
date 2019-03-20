@@ -110,6 +110,7 @@ static InterpretResult run(VM *vm) {
         case OP_NIL: push(vm, NIL_VAL); break;
         case OP_TRUE: push(vm, BOOL_VAL(true)); break;
         case OP_FALSE: push(vm, BOOL_VAL(false)); break;
+        case OP_POP: pop(vm); break;
         case OP_EQUAL: {
             Value b = pop(vm);
             Value a = pop(vm);
@@ -142,9 +143,11 @@ static InterpretResult run(VM *vm) {
                 return INTERPRET_RUNTIME_ERROR;
             }
             push(vm, NUMBER_VAL(-AS_NUMBER(pop(vm)))); break;
-        case OP_RETURN:
+        case OP_PRINT:
             print_value(pop(vm));
             printf("\n");
+            break;
+        case OP_RETURN:
             return INTERPRET_OK;
         }
     }

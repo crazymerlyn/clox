@@ -41,6 +41,8 @@ typedef struct {
 } ParseRule;
 
 static void expression(Parser *parser);
+static void statement(Parser *parser);
+static void declaration(Parser *parser);
 static ParseRule *get_rule(TokenType type);
 static void parse_precedence(Parser *parser, Precedence precedence);
 
@@ -122,6 +124,16 @@ static void consume(Parser *parser, TokenType type, const char *message) {
     error_at_current(parser, message);
 }
 
+static bool check(Parser *parser, TokenType type) {
+    return parser->current.type == type;
+}
+
+static bool match(Parser *parser, TokenType type) {
+    if (!check(parser, type)) return false;
+    advance(parser);
+    return true;
+}
+
 static void parse_precedence(Parser *parser, Precedence precedence) {
     advance(parser);
     ParseFn prefix_rule = get_rule(parser->previous.type)->prefix;
@@ -140,6 +152,30 @@ static void parse_precedence(Parser *parser, Precedence precedence) {
 
 static void expression(Parser *parser) {
     parse_precedence(parser, PREC_ASSIGNMENT);
+}
+
+static void expression_statement(Parser *parser) {
+    expression(parser);
+    emit_byte(parser, OP_POP);
+    consume(parser, TOKEN_SEMICOLON, "Expect ';' after expression.");
+}
+
+static void print_statement(Parser *parser) {
+    expression(parser);
+    consume(parser, TOKEN_SEMICOLON, "Expect ';' after value.");
+    emit_byte(parser, OP_PRINT);
+}
+
+static void declaration(Parser *parser) {
+    statement(parser);
+}
+
+static void statement(Parser *parser) {
+    if (match(parser, TOKEN_PRINT)) {
+        print_statement(parser);
+    } else {
+        expression_statement(parser);
+    }
 }
 
 static void grouping(Parser *parser) {
@@ -250,8 +286,9 @@ bool compile(VM *vm, const char *source, Chunk *chunk) {
     parser.chunk = chunk;
     parser.vm = vm;
     advance(&parser);
-    expression(&parser);
-    consume(&parser, TOKEN_EOF, "Expect end of expression.");
+    while (!match(&parser, TOKEN_EOF)) {
+        declaration(&parser);
+    }
     end_compiler(&parser);
     return !parser.had_error;
 }
