@@ -31,7 +31,7 @@ void write_chunk(Chunk *chunk, uint8_t byte, int line) {
     chunk->count++;
 }
 
-void write_constant(Chunk *chunk, Value value, int line) {
+int write_constant(Chunk *chunk, Value value, int line) {
     int index = add_constant(chunk, value);
     if (index <= 0xff) {
         write_chunk(chunk, OP_CONSTANT, line);
@@ -42,6 +42,7 @@ void write_constant(Chunk *chunk, Value value, int line) {
         write_chunk(chunk, (index >> 8) & 0xff, line);
         write_chunk(chunk, index & 0xff, line);
     }
+    return index;
 }
 
 int add_constant(Chunk *chunk, Value value) {

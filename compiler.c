@@ -150,8 +150,34 @@ static void parse_precedence(Parser *parser, Precedence precedence) {
     }
 }
 
+static int identifier_constant(Parser *parser, Token *name) {
+    return write_constant(current_chunk(parser), OBJ_VAL(copy_string(parser->vm, name->start, name->length)), parser->previous.line);
+}
+
+static uint8_t parse_variable(Parser *parser, const char *error_message) {
+    consume(parser, TOKEN_IDENTIFIER, error_message);
+    return identifier_constant(parser, &parser->previous);
+}
+
+static void define_variable(Parser *parser, int global) {
+    emit_bytes(parser, OP_DEFINE_GLOBAL, global);
+}
+
 static void expression(Parser *parser) {
     parse_precedence(parser, PREC_ASSIGNMENT);
+}
+
+static void var_declaration(Parser *parser) {
+    int global = parse_variable(parser, "Expect variable name.");
+
+    if (match(parser, TOKEN_EQUAL)) {
+        expression(parser);
+    } else {
+        emit_byte(parser, OP_NIL);
+    }
+    consume(parser, TOKEN_SEMICOLON, "Expect ';' after variable declaration");
+
+    define_variable(parser, global);
 }
 
 static void expression_statement(Parser *parser) {
@@ -193,7 +219,11 @@ static void synchronize(Parser *parser) {
 }
 
 static void declaration(Parser *parser) {
-    statement(parser);
+    if (match(parser, TOKEN_VAR)) {
+        var_declaration(parser);
+    } else {
+        statement(parser);
+    }
 
     if (parser->panic_mode) synchronize(parser);
 }

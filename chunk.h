@@ -11,6 +11,7 @@ typedef enum {
     OP_TRUE,
     OP_FALSE,
     OP_POP,
+    OP_DEFINE_GLOBAL,
     OP_EQUAL,
     OP_GREATER,
     OP_LESS,
@@ -36,7 +37,7 @@ void init_chunk(Chunk *chunk);
 void free_chunk(Chunk *chunk);
 
 void write_chunk(Chunk *chunk, uint8_t byte, int line);
-void write_constant(Chunk *chunk, Value value, int line);
+int write_constant(Chunk *chunk, Value value, int line);
 int add_constant(Chunk *chunk, Value value);
 
 #endif
