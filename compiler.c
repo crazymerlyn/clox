@@ -32,7 +32,7 @@ typedef enum {
   PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)(Parser *parser);
+typedef void (*ParseFn)(Parser *parser, bool can_assign);
 
 typedef struct {
     ParseFn prefix;
@@ -76,7 +76,7 @@ static void emit_constant(Parser *parser, Value value) {
     write_constant(current_chunk(parser), value, parser->previous.line);
 }
 
-static void number(Parser *parser) {
+static void number(Parser *parser, bool can_assign) {
     double value = strtod(parser->previous.start, NULL);
     emit_constant(parser, NUMBER_VAL(value));
 }
@@ -141,12 +141,19 @@ static void parse_precedence(Parser *parser, Precedence precedence) {
         error(parser, "Expect expression.");
         return;
     }
-    prefix_rule(parser);
+
+    bool can_assign = precedence <= PREC_ASSIGNMENT;
+    prefix_rule(parser, can_assign);
 
     while (precedence <= get_rule(parser->current.type)->precedence) {
         advance(parser);
         ParseFn infix_rule = get_rule(parser->previous.type)->infix;
-        infix_rule(parser);
+        infix_rule(parser, can_assign);
+    }
+
+    if (can_assign && match(parser, TOKEN_EQUAL)) {
+        error(parser, "Invalid assignment target.");
+        expression(parser);
     }
 }
 
@@ -236,12 +243,12 @@ static void statement(Parser *parser) {
     }
 }
 
-static void grouping(Parser *parser) {
+static void grouping(Parser *parser, bool can_assign) {
     expression(parser);
     consume(parser, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void unary(Parser *parser) {
+static void unary(Parser *parser, bool can_assign) {
     TokenType operator_type = parser->previous.type;
 
     parse_precedence(parser, PREC_UNARY);
@@ -253,7 +260,7 @@ static void unary(Parser *parser) {
     }
 }
 
-static void binary(Parser *parser) {
+static void binary(Parser *parser, bool can_assign) {
     TokenType operator_type = parser->previous.type;
 
     ParseRule *rule = get_rule(operator_type);
@@ -273,7 +280,7 @@ static void binary(Parser *parser) {
     }
 }
 
-static void literal(Parser *parser) {
+static void literal(Parser *parser, bool can_assign) {
     switch(parser->previous.type) {
     case TOKEN_FALSE: emit_byte(parser, OP_FALSE); break;
     case TOKEN_TRUE: emit_byte(parser, OP_TRUE); break;
@@ -284,14 +291,19 @@ static void literal(Parser *parser) {
 }
 
 
-static void string(Parser *parser) {
+static void string(Parser *parser, bool can_assign) {
     emit_constant(parser, OBJ_VAL(copy_string(parser->vm, parser->previous.start + 1,
                     parser->previous.length - 2)));
 }
 
-static void variable(Parser *parser) {
+static void variable(Parser *parser, bool can_assign) {
     int arg = identifier_constant(parser, &parser->previous);
-    emit_bytes(parser, OP_GET_GLOBAL, (uint8_t)arg);
+    if (can_assign && match(parser, TOKEN_EQUAL)) {
+        expression(parser);
+        emit_bytes(parser, OP_SET_GLOBAL, (uint8_t)arg);
+    } else {
+        emit_bytes(parser, OP_GET_GLOBAL, (uint8_t)arg);
+    }
 }
 
 ParseRule rules[] = {                                              
