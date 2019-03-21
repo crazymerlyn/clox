@@ -151,7 +151,7 @@ static void parse_precedence(Parser *parser, Precedence precedence) {
 }
 
 static int identifier_constant(Parser *parser, Token *name) {
-    return write_constant(current_chunk(parser), OBJ_VAL(copy_string(parser->vm, name->start, name->length)), parser->previous.line);
+    return add_constant(current_chunk(parser), OBJ_VAL(copy_string(parser->vm, name->start, name->length)));
 }
 
 static uint8_t parse_variable(Parser *parser, const char *error_message) {
@@ -289,6 +289,11 @@ static void string(Parser *parser) {
                     parser->previous.length - 2)));
 }
 
+static void variable(Parser *parser) {
+    int arg = identifier_constant(parser, &parser->previous);
+    emit_bytes(parser, OP_GET_GLOBAL, (uint8_t)arg);
+}
+
 ParseRule rules[] = {                                              
   { grouping, NULL,    PREC_CALL },       // TOKEN_LEFT_PAREN      
   { NULL,     NULL,    PREC_NONE },       // TOKEN_RIGHT_PAREN     
@@ -309,7 +314,7 @@ ParseRule rules[] = {
   { NULL,     binary,  PREC_COMPARISON }, // TOKEN_GREATER_EQUAL   
   { NULL,     binary,  PREC_COMPARISON }, // TOKEN_LESS            
   { NULL,     binary,  PREC_COMPARISON }, // TOKEN_LESS_EQUAL      
-  { NULL,     NULL,    PREC_NONE },       // TOKEN_IDENTIFIER      
+  { variable, NULL,    PREC_NONE },       // TOKEN_IDENTIFIER      
   { string,   NULL,    PREC_NONE },       // TOKEN_STRING          
   { number,   NULL,    PREC_NONE },       // TOKEN_NUMBER          
   { NULL,     NULL,    PREC_AND },        // TOKEN_AND             
